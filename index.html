@@ -3,26 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Golf Leaderboard</title>
+  <title>Golf Game Leaderboard</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; }
-    table { border-collapse: collapse; width: 100%; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #f4f4f4; }
+    h2 { margin-top: 2rem; }
   </style>
 </head>
 <body>
-  <h1>Live Golf Leaderboard</h1>
-  <table id="leaderboard">
-    <thead>
-      <tr><th>Rank</th><th>Player</th><th>Total Score</th><th>Through</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <h1>The Open – Friends Game Leaderboard</h1>
+
+  <h2>🏆 Game Standings</h2>
+  <div id="game-leaderboard"></div>
+
+  <h2>📋 Player Picks</h2>
+  <div id="friend-picks"></div>
 
   <script>
     const apiKey = 'a35ccc1e4bad48b294234c217fb80bde';
-    const tournamentId = '642';
+    const tournamentId = '642'; // Update if needed
+
+    // Update with real golfer names from API
+    const friendPicks = {
+      "Alice": ["Rory McIlroy", "Jordan Spieth", "Scottie Scheffler"],
+      "Bob": ["Jon Rahm", "Viktor Hovland", "Xander Schauffele"],
+      "Charlie": ["Justin Thomas", "Rickie Fowler", "Tiger Woods"]
+    };
 
     async function fetchLeaderboard() {
       const url = `https://api.sportsdata.io/golf/v2/json/Leaderboard/${tournamentId}?key=${apiKey}`;
@@ -31,26 +39,72 @@
         const data = await res.json();
         const players = data.Players || [];
 
-        const tbody = document.querySelector('#leaderboard tbody');
-        tbody.innerHTML = '';
-
-        players.forEach(player => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${player.Rank}</td>
-            <td>${player.Name}</td>
-            <td>${player.TotalScore}</td>
-            <td>${player.TotalThrough}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+        renderGameLeaderboard(players);
       } catch (err) {
         console.error('Failed to fetch leaderboard:', err);
       }
     }
 
+    function renderGameLeaderboard(players) {
+      const gameResults = [];
+
+      for (const [friend, picks] of Object.entries(friendPicks)) {
+        const pickDetails = picks.map(name => {
+          const player = players.find(p => p.Name === name);
+          return {
+            name,
+            rank: player ? parseInt(player.Rank) : 999 // fallback for missing
+          };
+        });
+
+        const totalScore = pickDetails.reduce((sum, p) => sum + p.rank, 0);
+
+        gameResults.push({
+          friend,
+          totalScore,
+          picks: pickDetails
+        });
+      }
+
+      // Sort friends by total rank (lowest wins)
+      gameResults.sort((a, b) => a.totalScore - b.totalScore);
+
+      // Build Game Leaderboard Table
+      const gameTable = `
+        <table>
+          <thead><tr><th>Friend</th><th>Total Rank</th></tr></thead>
+          <tbody>
+            ${gameResults.map(r => `
+              <tr>
+                <td>${r.friend}</td>
+                <td>${r.totalScore}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('game-leaderboard').innerHTML = gameTable;
+
+      // Build Friend Picks Table
+      const picksHTML = gameResults.map(r => `
+        <h3>${r.friend}</h3>
+        <table>
+          <thead><tr><th>Golfer</th><th>Rank</th></tr></thead>
+          <tbody>
+            ${r.picks.map(p => `
+              <tr>
+                <td>${p.name}</td>
+                <td>${p.rank !== 999 ? p.rank : 'N/A'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `).join('');
+      document.getElementById('friend-picks').innerHTML = picksHTML;
+    }
+
     fetchLeaderboard();
-    setInterval(fetchLeaderboard, 1 * 60 * 1000); // refresh every 1 minutes
+    setInterval(fetchLeaderboard, 60 * 1000); // refresh every 1 minute
   </script>
 </body>
 </html>
