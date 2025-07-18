@@ -18,11 +18,16 @@ async function fetchLeaderboard() {
     const data = await res.json();
     const players = data.Players || [];
 
-    renderGameLeaderboard(players);
+    // Process ranks here, with players in scope:
+    const rankedPlayers = getPlayerRanks(players);
+
+    // Pass ranked players to render function
+    renderGameLeaderboard(rankedPlayers);
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err);
   }
 }
+
 
 function getPlayerRanks(players) {
   const validPlayers = players
@@ -57,11 +62,11 @@ function renderGameLeaderboard(rankedPlayers) {
 
   for (const [friend, picks] of Object.entries(friendPicks)) {
     const pickDetails = picks.map(name => {
-      const player = players.find(p => p.Name === name);
-      return {
+      const player = rankedPlayers.find(p => p.Name === name);
+        return {
         name,
         rank: player.customRank
-      };
+        };
     });
 
     const totalScore = pickDetails.reduce((sum, p) => sum + p.rank, 0);
