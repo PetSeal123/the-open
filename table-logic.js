@@ -18,16 +18,12 @@ async function fetchLeaderboard() {
     const data = await res.json();
     const players = data.Players || [];
 
-    // Process ranks here, with players in scope:
     const rankedPlayers = getPlayerRanks(players);
-
-    // Pass ranked players to render function
     renderGameLeaderboard(rankedPlayers);
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err);
   }
 }
-
 
 function getPlayerRanks(players) {
   const validPlayers = players
@@ -39,7 +35,6 @@ function getPlayerRanks(players) {
 
   for (let i = 0; i < validPlayers.length; i++) {
     const player = validPlayers[i];
-
     if (i > 0 && player.TotalScore !== validPlayers[i - 1].TotalScore) {
       currentRank = i + 1;
     }
@@ -61,13 +56,13 @@ function renderGameLeaderboard(rankedPlayers) {
   for (const [friend, picks] of Object.entries(friendPicks)) {
     const pickDetails = picks.map(name => {
       const player = rankedPlayers.find(p => p.Name === name);
-        return {
+      return {
         name,
-        rank: player.customRank
-        };
+        rank: player ? player.customRank : 'N/A'
+      };
     });
 
-    const totalScore = pickDetails.reduce((sum, p) => sum + p.rank, 0);
+    const totalScore = pickDetails.reduce((sum, p) => sum + (typeof p.rank === 'number' ? p.rank : 0), 0);
 
     gameResults.push({
       friend,
@@ -76,10 +71,8 @@ function renderGameLeaderboard(rankedPlayers) {
     });
   }
 
-  // Sort by total score ascending
   gameResults.sort((a, b) => a.totalScore - b.totalScore);
 
-  // Game leaderboard table
   const gameTable = `
     <table>
       <thead><tr><th>Friend</th><th>Total Rank</th></tr></thead>
@@ -95,7 +88,6 @@ function renderGameLeaderboard(rankedPlayers) {
   `;
   document.getElementById('game-leaderboard').innerHTML = gameTable;
 
-  // Friend picks table
   const picksHTML = gameResults.map(r => `
     <h3>${r.friend}</h3>
     <table>
@@ -104,7 +96,7 @@ function renderGameLeaderboard(rankedPlayers) {
         ${r.picks.map(p => `
           <tr>
             <td>${p.name}</td>
-            <td>${p.rank !== 999 ? p.rank : 'N/A'}</td>
+            <td>${p.rank}</td>
           </tr>
         `).join('')}
       </tbody>
