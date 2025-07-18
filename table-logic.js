@@ -24,7 +24,35 @@ async function fetchLeaderboard() {
   }
 }
 
-function renderGameLeaderboard(players) {
+function getPlayerRanks(players) {
+  const validPlayers = players
+    .filter(p => typeof p.TotalScore === 'number')
+    .sort((a, b) => a.TotalScore - b.TotalScore);
+
+  const ranked = [];
+  let currentRank = 1;
+
+  for (let i = 0; i < validPlayers.length; i++) {
+    const player = validPlayers[i];
+
+    if (i > 0 && player.TotalScore !== validPlayers[i - 1].TotalScore) {
+      currentRank = i + 1;
+    }
+
+    ranked.push({
+      Name: player.Name,
+      TotalScore: player.TotalScore,
+      TotalThrough: player.TotalThrough,
+      customRank: currentRank
+    });
+  }
+
+  return ranked;
+}
+
+const rankedPlayers = getPlayerRanks(players);
+
+function renderGameLeaderboard(rankedPlayers) {
   const gameResults = [];
 
   for (const [friend, picks] of Object.entries(friendPicks)) {
@@ -32,7 +60,7 @@ function renderGameLeaderboard(players) {
       const player = players.find(p => p.Name === name);
       return {
         name,
-        rank: player && player.TotalScore !== null ? parseInt(player.Rank) : 999
+        rank: player.customRank
       };
     });
 
