@@ -55,8 +55,6 @@ function getPlayerRanks(players) {
   return ranked;
 }
 
-// const rankedPlayers = getPlayerRanks(players);
-
 function renderGameLeaderboard(rankedPlayers) {
   const gameResults = [];
 
