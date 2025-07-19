@@ -47,6 +47,8 @@ function getPlayerRanks(players) {
     });
   }
 
+  console.log(ranked)
+
   return ranked;
 }
 
@@ -58,29 +60,34 @@ function renderGameLeaderboard(rankedPlayers) {
       const player = rankedPlayers.find(p => p.Name === name);
       return {
         name,
-        rank: player ? player.customRank : 'N/A'
+        rank: player?.customRank ?? null
       };
     });
 
-    const totalScore = pickDetails.reduce((sum, p) => sum + (typeof p.rank === 'number' ? p.rank : 0), 0);
+    const hasCut = pickDetails.some(p => p.rank === null);
+    const totalScore = hasCut ? Infinity : pickDetails.reduce((sum, p) => sum + p.rank, 0);
 
     gameResults.push({
       friend,
       totalScore,
-      picks: pickDetails
+      picks: pickDetails,
+      eliminated: hasCut
     });
   }
 
+  // Sort with eliminated friends at the bottom
   gameResults.sort((a, b) => a.totalScore - b.totalScore);
 
+  // Game leaderboard table
   const gameTable = `
     <table>
-      <thead><tr><th>Friend</th><th>Total Rank</th></tr></thead>
+      <thead><tr><th>Friend</th><th>Total Rank</th><th>Status</th></tr></thead>
       <tbody>
         ${gameResults.map(r => `
-          <tr>
+          <tr class="${r.eliminated ? 'eliminated' : ''}">
             <td>${r.friend}</td>
-            <td>${r.totalScore}</td>
+            <td>${r.eliminated ? '—' : r.totalScore}</td>
+            <td>${r.eliminated ? '❌ Eliminated (CUT player)' : '✅ Active'}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -88,19 +95,22 @@ function renderGameLeaderboard(rankedPlayers) {
   `;
   document.getElementById('game-leaderboard').innerHTML = gameTable;
 
+  // Friend picks table
   const picksHTML = gameResults.map(r => `
-    <h3>${r.friend}</h3>
-    <table>
-      <thead><tr><th>Golfer</th><th>Rank</th></tr></thead>
-      <tbody>
-        ${r.picks.map(p => `
-          <tr>
-            <td>${p.name}</td>
-            <td>${p.rank}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+    <div class="friend-block ${r.eliminated ? 'eliminated' : ''}">
+      <h3>${r.friend}</h3>
+      <table>
+        <thead><tr><th>Golfer</th><th>Rank</th></tr></thead>
+        <tbody>
+          ${r.picks.map(p => `
+            <tr>
+              <td>${p.name}</td>
+              <td>${p.rank !== null ? p.rank : 'CUT'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
   `).join('');
   document.getElementById('friend-picks').innerHTML = picksHTML;
 }
