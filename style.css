@@ -72,4 +72,17 @@
       font-size: 0.9rem;
     }
   }
+
+  .eliminated {
+  background-color: #ffe5e5;
+  color: #a94442;
+  }
+
+  .eliminated td {
+    font-weight: bold;
+  }
+
+  .friend-block.eliminated h3 {
+    color: #a94442;
+  }
 </style>
